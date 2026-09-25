@@ -15,7 +15,7 @@ spec:
     helm:
       releaseName: pos
   destination:
-    server: https://kubernetes.default.svc
+    name: platform-dev-pos
     namespace: pos
   syncPolicy:
     automated:

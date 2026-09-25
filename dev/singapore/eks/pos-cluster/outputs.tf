@@ -28,3 +28,14 @@ output "argocd_manager_token" {
   value       = try(base64decode(kubernetes_secret_v1.argocd_manager_token.data.token), null)
   sensitive   = true
 }
+
+output "argocd_cluster_config" {
+  description = "Argo CD connection data for the POS cluster."
+  value = {
+    name         = module.eks.cluster_name
+    server       = module.eks.cluster_endpoint
+    ca_data      = module.eks.cluster_certificate_authority_data
+    bearer_token = try(base64decode(kubernetes_secret_v1.argocd_manager_token.data.token), null)
+  }
+  sensitive = true
+}

@@ -15,7 +15,7 @@ spec:
     helm:
       releaseName: erp
   destination:
-    server: https://kubernetes.default.svc
+    name: platform-dev-erp
     namespace: erp
   syncPolicy:
     automated:
