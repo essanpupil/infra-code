@@ -49,3 +49,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "allowed_principal_arns" {
+  description = "IAM principal ARNs allowed to read the secret. An empty set creates no resource policy."
+  type        = set(string)
+  default     = []
+}
