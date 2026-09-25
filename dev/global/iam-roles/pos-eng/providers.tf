@@ -1,6 +1,12 @@
 terraform {
   required_version = ">= 1.5.0"
 
+  backend "s3" {
+    bucket = "platform-dev-terraform-state"
+    key    = "dev/global/iam-roles/pos-eng/terraform.tfstate"
+    region = "ap-southeast-1"
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
