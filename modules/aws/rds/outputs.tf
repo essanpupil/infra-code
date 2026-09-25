@@ -22,3 +22,8 @@ output "security_group_id" {
   description = "RDS security group ID."
   value       = aws_security_group.this.id
 }
+
+output "master_user_secret_arn" {
+  description = "RDS-managed Secrets Manager ARN for the master user password."
+  value       = try(aws_db_instance.this.master_user_secret[0].secret_arn, null)
+}

@@ -66,12 +66,6 @@ variable "username" {
   default     = "appuser"
 }
 
-variable "password" {
-  description = "Master database password, normally sourced from the secrets module."
-  type        = string
-  sensitive   = true
-}
-
 variable "port" {
   description = "Database port."
   type        = number
