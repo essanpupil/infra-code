@@ -1,15 +1,14 @@
 # EKS module
 
-This module deploys an Amazon EKS cluster with:
+This module deploys an Amazon EKS control plane, its IAM roles, managed
+add-ons, an IAM OIDC provider for IRSA, and configurable EKS managed node
+groups. The VPC, subnets, NAT gateways, and security groups are intentionally
+owned by the consuming configuration.
 
-- A highly available control plane across the supplied subnets.
-- Private API endpoint access by default.
-- EKS managed core add-ons.
-- EKS managed node groups with independent scaling, instance types, labels, taints, and capacity type.
-- A default on-demand `system` pool and a scale-to-zero Spot `spot` pool to reduce compute cost.
-- An IAM OIDC provider for IAM Roles for Service Accounts (IRSA).
-
-The module expects the VPC and subnets to already exist. Use private subnets in at least two Availability Zones. NAT gateways, their routing, and security-group rules are intentionally outside this module.
+The module requires at least two subnets. Pass private subnets from at least
+two Availability Zones to keep the control plane highly available. The
+Kubernetes API is private by default; if public access is enabled, restrict
+`endpoint_public_access_cidrs` to trusted networks.
 
 ## Example
 
@@ -17,39 +16,55 @@ The module expects the VPC and subnets to already exist. Use private subnets in 
 module "eks" {
   source = "./modules/aws/eks"
 
-  name               = "platform-prod"
-  vpc_id             = module.vpc.vpc_id
-  private_subnet_ids = module.vpc.private_subnet_ids
+  name       = "platform-prod"
+  subnet_ids = module.vpc.private_subnet_ids
 
   tags = {
     Environment = "prod"
     Project     = "platform"
   }
+
+  node_pools = {
+    system = {
+      capacity_type              = "ON_DEMAND"
+      instance_types             = ["m7i.large"]
+      min_size                   = 3
+      desired_size               = 3
+      max_size                   = 6
+      max_unavailable_percentage = 33
+      labels                     = { "node-role.kubernetes.io/system" = "true" }
+      taints = [{
+        key    = "workload"
+        value  = "system"
+        effect = "NO_SCHEDULE"
+      }]
+    }
+
+    workloads = {
+      capacity_type  = "SPOT"
+      instance_types = ["m7i.large", "m6i.large", "m5.large"]
+      min_size       = 0
+      desired_size   = 2
+      max_size       = 20
+      labels         = { workload = "general" }
+    }
+  }
 }
 ```
 
-The default pools keep two on-demand nodes for cluster/system workloads and use Spot capacity for burstable workloads. For production workloads, override `node_pools` and use taints/tolerations to prevent critical workloads from landing on Spot nodes.
+## Cost and availability guidance
 
-```hcl
-node_pools = {
-  system = {
-    capacity_type  = "ON_DEMAND"
-    instance_types = ["m7i.large"]
-    min_size       = 3
-    desired_size   = 3
-    max_size       = 6
-    labels         = { "node-role.kubernetes.io/system" = "true" }
-  }
+- Keep a multi-node `ON_DEMAND` system pool with `min_size >= 2` (normally 3
+  for production) for cluster add-ons and critical workloads.
+- Use multiple instance types in `SPOT` pools to improve capacity
+  diversification. Keep `min_size = 0` only for workloads that tolerate
+  interruption.
+- Put each pool across the same private subnets so managed node groups can
+  spread capacity across Availability Zones.
+- Use labels and taints to keep critical workloads off Spot pools. Kubernetes
+  workloads must provide matching tolerations for tainted pools.
+- Set `max_unavailable_percentage` to balance safe rolling upgrades against
+  upgrade speed.
 
-  workloads = {
-    capacity_type  = "SPOT"
-    instance_types = ["m7i.large", "m6i.large", "m5.large"]
-    min_size       = 0
-    desired_size   = 2
-    max_size       = 20
-    labels         = { workload = "general" }
-  }
-}
-```
-
-Run `terraform init` and `terraform validate` from the root configuration that consumes this module.
+Run `terraform init` and `terraform validate` from the root configuration that
+consumes this module.
