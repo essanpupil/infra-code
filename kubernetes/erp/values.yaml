@@ -3,6 +3,8 @@ replicaCount: 2
 image:
   repository: nginx
   tag: "1.27"
+  # Set digest to deploy repository@sha256:... instead of a mutable tag.
+  digest: ""
   pullPolicy: IfNotPresent
 
 service:
