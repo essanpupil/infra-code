@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: erp
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: business-applications
+    app.kubernetes.io/name: erp
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/essanpupil/infra-code.git
+    targetRevision: main
+    path: kubernetes/erp
+    helm:
+      releaseName: erp
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: erp
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
