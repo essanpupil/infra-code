@@ -17,7 +17,7 @@ data "aws_iam_user" "trusted" {
 }
 
 module "pos_eng_role" {
-  source = "../../../../modules/aws/iam-role"
+  source = "git::https://github.com/essanpupil/infra-code.git//modules/aws/iam-role"
 
   name        = "pos-eng"
   description = "Assumable by the first 15 centrally managed dummy IAM users."

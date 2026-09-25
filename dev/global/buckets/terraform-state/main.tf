@@ -1,5 +1,5 @@
 module "terraform_state" {
-  source = "../../../../modules/aws/s3-bucket"
+  source = "git::https://github.com/essanpupil/infra-code.git//modules/aws/s3-bucket"
 
   bucket_name = "platform-dev-terraform-state"
 

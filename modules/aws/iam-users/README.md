@@ -6,7 +6,7 @@ Those capabilities should be added only when required and managed separately.
 
 ```hcl
 module "iam_users" {
-  source = "./modules/aws/iam-users"
+  source = "git::https://github.com/essanpupil/infra-code.git//modules/aws/iam-users"
 
   user_names = ["dummy-user-01", "dummy-user-02"]
   tags = {

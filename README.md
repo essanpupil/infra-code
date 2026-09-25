@@ -25,4 +25,6 @@ Point of Interest
 ## Task B: Kubernetes
 1. Create dedicated eks cluster for support services deployment such as argo-cd, self hosted cicd runners, monitoring services, etc. We can name this cluster `support-cluster`.
 2. Create application eks cluster, separate cluster deployment for each product if needed. This is to reduce damage in case we have miss configuration. In this example, we deploy `erp-cluster` and `pos-cluster`.
-3. 
+
+## Task C: CI/CD
+1. 

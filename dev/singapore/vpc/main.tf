@@ -1,5 +1,5 @@
 module "vpc" {
-  source = "../../../modules/aws/vpc"
+  source = "git::https://github.com/essanpupil/infra-code.git//modules/aws/vpc"
 
   name               = "platform-dev"
   vpc_cidr           = "10.0.0.0/16"

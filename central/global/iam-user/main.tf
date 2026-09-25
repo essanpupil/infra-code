@@ -5,7 +5,7 @@ locals {
 }
 
 module "dummy_iam_users" {
-  source = "../modules/aws/iam-users"
+  source = "git::https://github.com/essanpupil/infra-code.git//modules/aws/iam-users"
 
   user_names = local.dummy_user_names
   tags = {

@@ -20,7 +20,7 @@ provider "github" {
 }
 
 module "platform_team" {
-  source = "./modules/github/team"
+  source = "git::https://github.com/essanpupil/infra-code.git//modules/github/team"
 
   name        = "platform-engineering"
   description = "Platform engineering team"

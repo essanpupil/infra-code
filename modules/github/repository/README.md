@@ -20,7 +20,7 @@ provider "github" {
 }
 
 module "repository" {
-  source = "./modules/github/repository"
+  source = "git::https://github.com/essanpupil/infra-code.git//modules/github/repository"
 
   name        = "platform-infrastructure"
   description = "Infrastructure as code"

@@ -27,7 +27,7 @@ Set `enable_karpenter = false` only when Karpenter is not used.
 
 ```hcl
 module "eks" {
-  source = "./modules/aws/eks"
+  source = "git::https://github.com/essanpupil/infra-code.git//modules/aws/eks"
 
   name       = "platform-prod"
   subnet_ids = module.vpc.private_subnet_ids

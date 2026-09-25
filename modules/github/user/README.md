@@ -23,7 +23,7 @@ provider "github" {
 }
 
 module "platform_user" {
-  source = "./modules/github/user"
+  source = "git::https://github.com/essanpupil/infra-code.git//modules/github/user"
 
   username = "engineer-example"
   role     = "member"

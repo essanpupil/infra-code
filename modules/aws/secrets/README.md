@@ -6,7 +6,7 @@ Terraform variable or checked into source control.
 
 ```hcl
 module "db_secret" {
-  source = "./modules/aws/secrets"
+  source = "git::https://github.com/essanpupil/infra-code.git//modules/aws/secrets"
 
   name = "platform/dev/rds"
   secret_data = {

@@ -6,7 +6,7 @@ gateways. It is suitable as the network layer for the EKS module.
 
 ```hcl
 module "vpc" {
-  source = "./modules/aws/vpc"
+  source = "git::https://github.com/essanpupil/infra-code.git//modules/aws/vpc"
 
   name               = "platform-prod"
   vpc_cidr           = "10.0.0.0/16"
@@ -26,7 +26,7 @@ module "vpc" {
 }
 
 module "eks" {
-  source = "./modules/aws/eks"
+  source = "git::https://github.com/essanpupil/infra-code.git//modules/aws/eks"
 
   name       = "platform-prod"
   subnet_ids = module.vpc.private_subnet_ids_list

@@ -19,7 +19,7 @@ data "terraform_remote_state" "vpc" {
 }
 
 module "eks" {
-  source = "../../../../modules/aws/eks"
+  source = "git::https://github.com/essanpupil/infra-code.git//modules/aws/eks"
 
   name       = local.name
   subnet_ids = data.terraform_remote_state.vpc.outputs.private_subnet_ids_list
