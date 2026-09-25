@@ -28,8 +28,8 @@ module "eks" {
     system = {
       capacity_type              = "ON_DEMAND"
       instance_types             = ["t3.large", "t3a.large"]
-      min_size                   = 2
-      desired_size               = 2
+      min_size                   = 3
+      desired_size               = 3
       max_size                   = 4
       max_unavailable_percentage = 50
       labels = {

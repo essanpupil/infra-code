@@ -16,6 +16,13 @@ The AWS VPC CNI add-on enables prefix delegation by default
 `configuration_values` for the `vpc-cni` entry in `addons` when custom CNI
 configuration is required.
 
+Karpenter AWS integration is enabled by default. The module creates the
+controller IRSA role, node instance role support, interruption SQS queue, and
+EventBridge interruption rules. Use the `karpenter_controller_role_arn`,
+`karpenter_node_role_name`, and `karpenter_interruption_queue_name` outputs
+when installing the Karpenter controller and defining its `EC2NodeClass`.
+Set `enable_karpenter = false` only when Karpenter is not used.
+
 ## Example
 
 ```hcl
@@ -67,6 +74,9 @@ module "eks" {
   interruption.
 - Put each pool across the same private subnets so managed node groups can
   spread capacity across Availability Zones.
+- Keep each on-demand pool's minimum and desired size at least the number of
+  supplied Availability Zones. This gives every AZ baseline capacity; Spot
+  pools may still scale to zero.
 - Use labels and taints to keep critical workloads off Spot pools. Kubernetes
   workloads must provide matching tolerations for tainted pools.
 - Set `max_unavailable_percentage` to balance safe rolling upgrades against

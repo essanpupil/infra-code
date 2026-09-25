@@ -43,6 +43,24 @@ variable "enabled_cluster_log_types" {
   default     = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 }
 
+variable "enable_karpenter" {
+  description = "Create Karpenter AWS integration resources and interruption handling by default."
+  type        = bool
+  default     = true
+}
+
+variable "karpenter_namespace" {
+  description = "Kubernetes namespace used by the Karpenter controller."
+  type        = string
+  default     = "karpenter"
+}
+
+variable "karpenter_service_account" {
+  description = "Kubernetes service account used by the Karpenter controller."
+  type        = string
+  default     = "karpenter"
+}
+
 variable "enable_prefix_delegation" {
   description = "Enable AWS VPC CNI prefix delegation by default for the vpc-cni add-on."
   type        = bool
@@ -84,6 +102,17 @@ variable "node_pools" {
       pool.min_size <= pool.desired_size && pool.desired_size <= pool.max_size
     ])
     error_message = "Each node pool must satisfy min_size <= desired_size <= max_size."
+  }
+
+  validation {
+    condition = alltrue([
+      for pool in var.node_pools :
+      pool.capacity_type == "SPOT" || (
+        pool.min_size >= length(var.subnet_ids) &&
+        pool.desired_size >= length(var.subnet_ids)
+      )
+    ])
+    error_message = "Each ON_DEMAND node pool must have at least one baseline node per supplied Availability Zone."
   }
 }
 

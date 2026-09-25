@@ -22,3 +22,18 @@ output "node_group_names" {
   description = "Managed node group names keyed by pool name."
   value       = { for name, node_group in aws_eks_node_group.this : name => node_group.node_group_name }
 }
+
+output "karpenter_interruption_queue_name" {
+  description = "SQS queue name used by Karpenter interruption handling."
+  value       = var.enable_karpenter ? aws_sqs_queue.karpenter_interruption[0].name : null
+}
+
+output "karpenter_controller_role_arn" {
+  description = "IRSA role ARN for the Karpenter controller."
+  value       = var.enable_karpenter ? aws_iam_role.karpenter_controller[0].arn : null
+}
+
+output "karpenter_node_role_name" {
+  description = "Node IAM role name to use in Karpenter EC2NodeClass resources."
+  value       = var.enable_karpenter ? aws_iam_role.nodes.name : null
+}

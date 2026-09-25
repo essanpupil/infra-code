@@ -58,6 +58,13 @@ resource "aws_iam_role_policy_attachment" "nodes_ecr" {
   policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+resource "aws_iam_role_policy_attachment" "nodes_ssm" {
+  count = var.enable_karpenter ? 1 : 0
+
+  role       = aws_iam_role.nodes.name
+  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 resource "aws_eks_cluster" "this" {
   name     = var.name
   role_arn = aws_iam_role.cluster.arn
@@ -136,4 +143,152 @@ resource "aws_iam_openid_connect_provider" "this" {
   thumbprint_list = [data.tls_certificate.cluster_oidc.certificates[0].sha1_fingerprint]
   url             = aws_eks_cluster.this.identity[0].oidc[0].issuer
   tags            = var.tags
+}
+
+resource "aws_sqs_queue" "karpenter_interruption" {
+  count = var.enable_karpenter ? 1 : 0
+
+  name                      = "${var.name}-karpenter"
+  message_retention_seconds = 300
+  sqs_managed_sse_enabled   = true
+  tags                      = var.tags
+}
+
+data "aws_iam_policy_document" "karpenter_queue" {
+  count = var.enable_karpenter ? 1 : 0
+
+  statement {
+    sid    = "AllowEventBridgeToSend"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["events.amazonaws.com"]
+    }
+
+    actions   = ["sqs:SendMessage"]
+    resources = [aws_sqs_queue.karpenter_interruption[0].arn]
+  }
+}
+
+resource "aws_sqs_queue_policy" "karpenter_interruption" {
+  count = var.enable_karpenter ? 1 : 0
+
+  queue_url = aws_sqs_queue.karpenter_interruption[0].url
+  policy    = data.aws_iam_policy_document.karpenter_queue[0].json
+}
+
+resource "aws_cloudwatch_event_rule" "karpenter" {
+  for_each = var.enable_karpenter ? {
+    spot_interruption = {
+      detail_type = ["EC2 Spot Instance Interruption Warning"]
+      detail      = {}
+    }
+    rebalance = {
+      detail_type = ["EC2 Instance Rebalance Recommendation"]
+      detail      = {}
+    }
+    instance_state = {
+      detail_type = ["EC2 Instance State-change Notification"]
+      detail      = { state = ["pending"] }
+    }
+  } : {}
+
+  name = "${var.name}-karpenter-${each.key}"
+  event_pattern = jsonencode({
+    source      = ["aws.ec2"]
+    detail-type = each.value.detail_type
+    detail      = each.value.detail
+  })
+  tags = var.tags
+}
+
+resource "aws_cloudwatch_event_target" "karpenter" {
+  for_each = aws_cloudwatch_event_rule.karpenter
+
+  rule      = each.value.name
+  target_id = "KarpenterInterruptionQueue"
+  arn       = aws_sqs_queue.karpenter_interruption[0].arn
+}
+
+locals {
+  karpenter_oidc_issuer = replace(aws_eks_cluster.this.identity[0].oidc[0].issuer, "https://", "")
+}
+
+resource "aws_iam_role" "karpenter_controller" {
+  count = var.enable_karpenter ? 1 : 0
+
+  name = "${var.name}-karpenter-controller"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.this.arn
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "${local.karpenter_oidc_issuer}:aud" = "sts.amazonaws.com"
+          "${local.karpenter_oidc_issuer}:sub" = "system:serviceaccount:${var.karpenter_namespace}:${var.karpenter_service_account}"
+        }
+      }
+    }]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy" "karpenter_controller" {
+  count = var.enable_karpenter ? 1 : 0
+
+  name = "${var.name}-karpenter-controller"
+  role = aws_iam_role.karpenter_controller[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateFleet",
+          "ec2:CreateLaunchTemplate",
+          "ec2:CreateTags",
+          "ec2:DeleteLaunchTemplate",
+          "ec2:DescribeAvailabilityZones",
+          "ec2:DescribeImages",
+          "ec2:DescribeInstances",
+          "ec2:DescribeInstanceTypes",
+          "ec2:DescribeLaunchTemplates",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeSpotPriceHistory",
+          "ec2:DescribeSubnets",
+          "ec2:RunInstances",
+          "ec2:TerminateInstances"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["iam:PassRole"]
+        Resource = aws_iam_role.nodes.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["pricing:GetProducts"]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["sqs:GetQueueUrl", "sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
+        Resource = aws_sqs_queue.karpenter_interruption[0].arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["ssm:GetParameter"]
+        Resource = "arn:${data.aws_partition.current.partition}:ssm:*:*:parameter/aws/service/eks/*/amazon-eks-node-*"
+      }
+    ]
+  })
 }
