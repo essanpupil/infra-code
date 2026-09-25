@@ -34,3 +34,4 @@ Point of Interest
 
 ## Additional Documentation
 1. Folder modules is ideally deployed to its own github repo, and create release to be used by terraform configs in workload.
+2. All the code in this repo is generated using AI, and they only used as example, hence they are not applied into real resources. The main point of this repo is to show design and infra layout.
