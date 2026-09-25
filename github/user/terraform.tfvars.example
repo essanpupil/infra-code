@@ -1,0 +1,24 @@
+github_owner = "example-org"
+
+usernames = [
+  "dummy-github-user-01",
+  "dummy-github-user-02",
+  "dummy-github-user-03",
+  "dummy-github-user-04",
+  "dummy-github-user-05",
+  "dummy-github-user-06",
+  "dummy-github-user-07",
+  "dummy-github-user-08",
+  "dummy-github-user-09",
+  "dummy-github-user-10",
+  "dummy-github-user-11",
+  "dummy-github-user-12",
+  "dummy-github-user-13",
+  "dummy-github-user-14",
+  "dummy-github-user-15",
+  "dummy-github-user-16",
+  "dummy-github-user-17",
+  "dummy-github-user-18",
+  "dummy-github-user-19",
+  "dummy-github-user-20",
+]
