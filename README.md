@@ -31,3 +31,6 @@ Point of Interest
 2. For service authentication that does not suppoprt OIDC, we configure CICD secrets inside github repo action secrets.
 3. For application or oeprational secrets like database credentials, kubernetes secrets, etc, we can utilize aws secrets manager or hashicorp vault. if using aws secrets manager, we need to limit access to the secrets using resource iam policy and iam role policy.
 4. To add extra team isolations, we configure `CODEOWNERS` file.
+
+## Additional Documentation
+1. Folder modules is ideally deployed to its own github repo, and create release to be used by terraform configs in workload.
