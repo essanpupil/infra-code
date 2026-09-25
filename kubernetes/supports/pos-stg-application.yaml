@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pos-stg
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/essanpupil/infra-code.git
+    targetRevision: main
+    path: kubernetes/pos
+    helm:
+      releaseName: pos
+  destination:
+    name: platform-stg-pos
+    namespace: pos
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]
