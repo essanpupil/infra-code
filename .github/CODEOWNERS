@@ -1,0 +1,10 @@
+# Default owner for files without a more specific ownership rule.
+* @essanpupil/infra-team
+
+# ERP code and infrastructure.
+**/erp/** @essanpupil/erp-eng
+**/*erp* @essanpupil/erp-eng
+
+# POS code and infrastructure.
+**/pos/** @essanpupil/pos-eng
+**/*pos* @essanpupil/pos-eng
