@@ -15,6 +15,7 @@ module "github_actions_oidc" {
   role_name = "github-actions-infra-repo"
   subjects = [
     "repo:${local.repository}:ref:refs/heads/main",
+    "repo:${local.repository}:pull_request",
   ]
 
   managed_policy_arns = var.managed_policy_arns

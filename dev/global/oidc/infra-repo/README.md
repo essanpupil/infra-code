@@ -7,10 +7,11 @@ role for workflows from:
 https://github.com/essanpupil/infra-code.git
 ```
 
-The role trusts only the `main` branch:
+The role trusts the `main` branch and pull-request workflows:
 
 ```text
 repo:essanpupil/infra-code:ref:refs/heads/main
+repo:essanpupil/infra-code:pull_request
 ```
 
 The module creates the account-level GitHub OIDC provider if it does not
@@ -34,3 +35,10 @@ terraform apply
 The role ARN output should be used by GitHub Actions with
 `aws-actions/configure-aws-credentials` and `role-to-assume`. No long-lived
 AWS access key should be stored in GitHub.
+
+The plan workflow needs `s3:PutObject` access to the plan prefix and read-only
+AWS permissions for Terraform refresh. The apply workflow needs
+`s3:GetObject` for the plan prefix and the permissions required by the
+Terraform roots being applied. Configure the role ARN as the repository
+variable `AWS_ROLE_ARN`; configure `TERRAFORM_PLAN_BUCKET` as
+`platform-dev-terraform-state` unless the bucket name differs.

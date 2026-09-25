@@ -1,0 +1,65 @@
+name: Terraform apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number whose plan should be applied
+        required: true
+        type: string
+      commit_sha:
+        description: Exact pull request head SHA used to create the plan
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ap-southeast-1
+  PLAN_BUCKET: ${{ vars.TERRAFORM_PLAN_BUCKET || 'platform-dev-terraform-state' }}
+  PLAN_PREFIX: github-actions/terraform-plans
+
+jobs:
+  apply:
+    name: Apply approved Terraform plan
+    runs-on: ubuntu-latest
+    environment: terraform-apply
+    steps:
+      - name: Check out planned commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 1
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-session-name: github-actions-terraform-apply
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Download plan bundle
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+        run: |
+          set -euo pipefail
+          key="$PLAN_PREFIX/pr-${PR_NUMBER}/${COMMIT_SHA}/terraform-plans.tar.gz"
+          aws s3 cp "s3://${PLAN_BUCKET}/${key}" terraform-plans.tar.gz
+          tar -xzf terraform-plans.tar.gz
+
+      - name: Apply downloaded plans
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r root; do
+            safe_root=${root//\//__}
+            test -f "plan-bundle/${safe_root}.tfplan"
+            terraform -chdir="$root" init -input=false
+            terraform -chdir="$root" apply -input=false "$GITHUB_WORKSPACE/plan-bundle/${safe_root}.tfplan"
+          done < plan-bundle/roots.txt
