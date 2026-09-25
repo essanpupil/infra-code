@@ -16,6 +16,16 @@ spec:
         app.kubernetes.io/name: {{ include "erp.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      topologySpreadConstraints:
+        {{- range .Values.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "erp.name" $ }}
+              app.kubernetes.io/instance: {{ $.Release.Name }}
+        {{- end }}
       containers:
         - name: erp
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
