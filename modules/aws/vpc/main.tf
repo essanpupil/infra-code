@@ -110,3 +110,28 @@ resource "aws_route_table_association" "private" {
   subnet_id      = each.value.id
   route_table_id = aws_route_table.private[each.key].id
 }
+
+resource "aws_subnet" "data" {
+  for_each = length(var.data_subnet_cidrs) > 0 ? local.az_indexes : {}
+
+  vpc_id            = aws_vpc.this.id
+  availability_zone = each.value
+  cidr_block        = var.data_subnet_cidrs[tonumber(each.key)]
+  tags = merge(var.tags, {
+    Name = "${var.name}-data-${each.value}"
+  })
+}
+
+resource "aws_route_table" "data" {
+  for_each = aws_subnet.data
+
+  vpc_id = aws_vpc.this.id
+  tags   = merge(var.tags, { Name = "${var.name}-data-${each.value.availability_zone}" })
+}
+
+resource "aws_route_table_association" "data" {
+  for_each = aws_subnet.data
+
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.data[each.key].id
+}

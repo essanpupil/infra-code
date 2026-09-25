@@ -38,6 +38,17 @@ variable "private_subnet_cidrs" {
   }
 }
 
+variable "data_subnet_cidrs" {
+  description = "Optional data subnet CIDRs, one per Availability Zone. Data subnets have no default internet route."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = length(var.data_subnet_cidrs) == 0 || length(var.data_subnet_cidrs) == length(var.availability_zones)
+    error_message = "data_subnet_cidrs must be empty or contain one CIDR per Availability Zone."
+  }
+}
+
 variable "enable_nat_gateway" {
   description = "Create NAT gateways and private-subnet default routes."
   type        = bool

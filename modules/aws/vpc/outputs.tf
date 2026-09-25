@@ -33,6 +33,16 @@ output "private_subnet_ids_list" {
   value       = [for key in keys(local.az_indexes) : aws_subnet.private[key].id]
 }
 
+output "data_subnet_ids" {
+  description = "Data subnet IDs keyed by Availability Zone index."
+  value       = { for key, subnet in aws_subnet.data : key => subnet.id }
+}
+
+output "data_subnet_ids_list" {
+  description = "Data subnet IDs in Availability Zone input order."
+  value       = length(var.data_subnet_cidrs) > 0 ? [for key in keys(local.az_indexes) : aws_subnet.data[key].id] : []
+}
+
 output "nat_gateway_ids" {
   description = "NAT gateway IDs keyed by Availability Zone index."
   value       = { for key, nat in aws_nat_gateway.this : key => nat.id }

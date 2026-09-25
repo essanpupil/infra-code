@@ -14,6 +14,7 @@ module "vpc" {
 
   public_subnet_cidrs  = ["10.0.0.0/20", "10.0.16.0/20", "10.0.32.0/20"]
   private_subnet_cidrs = ["10.0.128.0/20", "10.0.144.0/20", "10.0.160.0/20"]
+  data_subnet_cidrs    = ["10.0.192.0/20", "10.0.208.0/20", "10.0.224.0/20"]
 
   # One NAT per AZ is more resilient; one shared NAT costs less.
   single_nat_gateway = false
@@ -42,6 +43,10 @@ module "eks" {
   AZ has an outage.
 - Use at least two Availability Zones for production and provide CIDRs in the
   same order as `availability_zones`.
+- Data subnets are isolated by default: they have dedicated route tables with
+  no default route to the internet or NAT gateway. Use them for databases and
+  other stateful services, and add only narrowly scoped private routes when
+  required.
 - Set `enable_nat_gateway = false` for isolated networks that do not need
   internet egress. Private subnets will not receive a default route.
 
