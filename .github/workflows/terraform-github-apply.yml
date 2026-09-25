@@ -1,0 +1,74 @@
+name: Terraform GitHub resource apply
+
+on:
+  pull_request_target:
+    types: [closed]
+    paths:
+      - 'github/**'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number whose GitHub plan should be applied
+        required: true
+        type: string
+      commit_sha:
+        description: Exact commit SHA used to create the GitHub plan
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ap-southeast-1
+  PLAN_BUCKET: ${{ vars.TERRAFORM_PLAN_BUCKET || 'platform-dev-terraform-state' }}
+  PLAN_PREFIX: github-actions/terraform-plans
+  TF_VAR_github_owner: ${{ secrets.GITHUB_OWNER }}
+  GITHUB_TOKEN: ${{ secrets.GH_TERRAFORM_TOKEN }}
+
+jobs:
+  apply:
+    name: Apply GitHub resources
+    if: >-
+      (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true) ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: terraform-github-apply
+    steps:
+      - name: Check out planned commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha || github.event.pull_request.head.sha }}
+          fetch-depth: 1
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-session-name: github-actions-github-apply
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Download GitHub plan bundle
+        env:
+          PR_NUMBER: ${{ inputs.pr_number || github.event.pull_request.number }}
+          COMMIT_SHA: ${{ inputs.commit_sha || github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          key="$PLAN_PREFIX/github/pr-${PR_NUMBER}/${COMMIT_SHA}/terraform-plans.tar.gz"
+          aws s3 cp "s3://${PLAN_BUCKET}/${key}" terraform-github-plans.tar.gz
+          tar -xzf terraform-github-plans.tar.gz
+
+      - name: Apply downloaded plans
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r root; do
+            safe_root=${root//\//__}
+            test -f "plan-bundle/${safe_root}.tfplan"
+            terraform -chdir="$root" init -input=false
+            terraform -chdir="$root" apply -input=false "$GITHUB_WORKSPACE/plan-bundle/${safe_root}.tfplan"
+          done < plan-bundle/roots.txt
