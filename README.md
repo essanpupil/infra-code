@@ -27,4 +27,6 @@ Point of Interest
 2. Create application eks cluster, separate cluster deployment for each product if needed. This is to reduce damage in case we have miss configuration. In this example, we deploy `erp-cluster` and `pos-cluster`.
 
 ## Task C: CI/CD
-1. 
+1. Authentication from github to targets aws account is configured using OIDC. All other authentication, such as to docker is also using OIDC whenever possible.
+2. For service authentication that does not suppoprt OIDC, we configure CICD secrets inside github repo action secrets.
+3. For application or oeprational secrets like database credentials, kubernetes secrets, etc, we can utilize aws secrets manager or hashicorp vault.
