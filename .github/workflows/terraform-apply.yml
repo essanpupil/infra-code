@@ -1,6 +1,13 @@
 name: Terraform apply
 
 on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'dev/**'
+      - 'central/**'
+      - 'stg/**'
+      - 'prod/**'
   workflow_dispatch:
     inputs:
       pr_number:
@@ -24,13 +31,14 @@ env:
 jobs:
   apply:
     name: Apply approved Terraform plan
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     environment: terraform-apply
     steps:
       - name: Check out planned commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.commit_sha }}
+          ref: ${{ inputs.commit_sha || github.event.pull_request.head.sha }}
           fetch-depth: 1
 
       - name: Configure AWS credentials
@@ -45,8 +53,8 @@ jobs:
 
       - name: Download plan bundle
         env:
-          PR_NUMBER: ${{ inputs.pr_number }}
-          COMMIT_SHA: ${{ inputs.commit_sha }}
+          PR_NUMBER: ${{ inputs.pr_number || github.event.pull_request.number }}
+          COMMIT_SHA: ${{ inputs.commit_sha || github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
           key="$PLAN_PREFIX/pr-${PR_NUMBER}/${COMMIT_SHA}/terraform-plans.tar.gz"
