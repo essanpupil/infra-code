@@ -1,0 +1,27 @@
+terraform {
+  required_version = ">= 1.5.0"
+  backend "s3" {
+    bucket = "platform-prod-terraform-state"
+    key    = "prod/singapore/eks/support-cluster/terraform.tfstate"
+    region = "ap-southeast-1"
+  }
+  required_providers {
+    aws        = { source = "hashicorp/aws", version = "~> 5.0" }
+    helm       = { source = "hashicorp/helm", version = "~> 2.17" }
+    kubernetes = { source = "hashicorp/kubernetes", version = "~> 2.35" }
+  }
+}
+provider "aws" { region = var.aws_region }
+data "aws_eks_cluster_auth" "this" { name = module.eks.cluster_name }
+provider "helm" {
+  kubernetes {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+    token                  = data.aws_eks_cluster_auth.this.token
+  }
+}
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.this.token
+}
