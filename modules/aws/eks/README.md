@@ -10,6 +10,12 @@ two Availability Zones to keep the control plane highly available. The
 Kubernetes API is private by default; if public access is enabled, restrict
 `endpoint_public_access_cidrs` to trusted networks.
 
+The AWS VPC CNI add-on enables prefix delegation by default
+(`ENABLE_PREFIX_DELEGATION=true`) to increase pod density per node. Set
+`enable_prefix_delegation = false` to disable the default, or provide explicit
+`configuration_values` for the `vpc-cni` entry in `addons` when custom CNI
+configuration is required.
+
 ## Example
 
 ```hcl

@@ -43,6 +43,12 @@ variable "enabled_cluster_log_types" {
   default     = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 }
 
+variable "enable_prefix_delegation" {
+  description = "Enable AWS VPC CNI prefix delegation by default for the vpc-cni add-on."
+  type        = bool
+  default     = true
+}
+
 variable "node_pools" {
   description = "Managed node pools. Use ON_DEMAND for critical/system workloads and SPOT for interruptible workloads."
   type = map(object({
@@ -85,6 +91,7 @@ variable "addons" {
   description = "EKS managed add-ons keyed by add-on name."
   type = map(object({
     addon_version               = optional(string)
+    configuration_values        = optional(string)
     resolve_conflicts_on_create = optional(string, "OVERWRITE")
     resolve_conflicts_on_update = optional(string, "OVERWRITE")
     service_account_role_arn    = optional(string)
